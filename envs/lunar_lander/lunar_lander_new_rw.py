@@ -34,12 +34,12 @@ class MOLunarLander(LunarLander):  # no need for EzPickle, it's already in Lunar
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        print("Running Lunar Lander with custom rewards")
+        # print("Running Lunar Lander with custom rewards")
         # Set up so we're looking to maximize each one at 1
         # Rewards are:
         # smallest distance to goal (small distance better)
-        # vertical velocity as it approaches the ground (small velocity better)
-        # angle as it approaches the ground (small angle better)
+        # greatest vertical velocity (small velocity better)
+        # angle at the final time step (small angle better)
         # average fuel used
         self.reward_space = spaces.Box(
             low=np.array([0., 0., 0., 0.]),
@@ -75,11 +75,16 @@ class MOLunarLander(LunarLander):  # no need for EzPickle, it's already in Lunar
         dist = np.linalg.norm(pos - self.goal)
         # Interpolate to [0, 1] where 1 is reached goal
         new_dist = np.interp(np.abs(dist), [0, self.max_dist], [1, 0])
+        # Save the final distance to the goal
+        self.fin_rw[0] = new_dist
 
         # Vertical velocity when approaching the ground
         lin_vel = np.array(st[2])
         # Want it to come in slow for a soft landing - neither highly negative or positive
         vert_vel = np.interp(np.abs(lin_vel), [0, self.observation_space.high[2]], [1, 0])
+
+        # Save the final velocity
+        self.fin_rw[1] = vert_vel
 
         # Angle when approaching the ground
         ang = np.array(st[4])
@@ -90,24 +95,20 @@ class MOLunarLander(LunarLander):  # no need for EzPickle, it's already in Lunar
         # Want it to be as close to 0 as possible
         ang_interp = np.interp(np.abs(new_ang), [0, self.observation_space.high[4]], [1, 0])
 
-        # Save the closest distance to the goal, velocity, and angle at that time
-        if new_dist > self.fin_rw[0]:
-            self.fin_rw[0] = new_dist
-            self.fin_rw[1] = vert_vel
-            self.fin_rw[2] = ang_interp
+        self.fin_rw[2] = ang_interp
 
         # Fuel used at this time step
         fuel = np.sum(vec_reward[3:])
         # Both fuel should always be in [0.5, 1] so their sum should be in [1, 2]
         # Got this from analyzing the original code below, specifically the m_power and s_power clip lines
         if fuel == 0:
-            fuel_interp = 0
+            fuel_interp = .011
         else:
-            fuel_interp = np.interp(fuel, [1, 2], [1, 0.01])
+            fuel_interp = np.interp(fuel, [1, 2], [.01, 0.])
         self.tot_fuel += fuel_interp
-        self.ts += 1
+        # self.ts += 1
         # Average fuel used over time
-        self.fin_rw[3] = self.tot_fuel / self.ts
+        self.fin_rw[3] = self.tot_fuel  # / self.ts
 
         return st, vec_reward, terminated, truncated, info
 
