@@ -47,18 +47,18 @@ class MOLunarLander(LunarLander):  # no need for EzPickle, it's already in Lunar
             shape=(4,),
             dtype=np.float32,
         )
-        self.reward_dim = 4
+        self.reward_dim = 3
         self.goal = np.zeros((2,))
         self.max_dist = self.calc_max_dist()
         self.st_bh_size = 6
         self.st_bh_idxs = [0, 6]
 
-        self.fin_rw = np.zeros((4,))
+        self.fin_rw = np.zeros((self.reward_dim,))
         self.tot_fuel = 0
         self.ts = 0
 
     def reset_custom(self):
-        self.fin_rw = np.zeros((4,))
+        self.fin_rw = np.zeros((self.reward_dim,))
         self.tot_fuel = 0
         self.ts = 0
 
@@ -68,47 +68,47 @@ class MOLunarLander(LunarLander):  # no need for EzPickle, it's already in Lunar
 
     def step(self, action):
         st, vec_reward, terminated, truncated, info = self.original_code(action)
-
-        # Distance to goal
-        # Euclidean distance between x,y and [0, 0]
-        pos = np.array(st[:2])
-        dist = np.linalg.norm(pos - self.goal)
-        # Interpolate to [0, 1] where 1 is reached goal
-        new_dist = np.interp(np.abs(dist), [0, self.max_dist], [1, 0])
-        # Save the final distance to the goal
-        self.fin_rw[0] = new_dist
-
-        # Vertical velocity when approaching the ground
-        lin_vel = np.array(st[2])
-        # Want it to come in slow for a soft landing - neither highly negative or positive
-        vert_vel = np.interp(np.abs(lin_vel), [0, self.observation_space.high[2]], [1, 0])
-
-        # Save the final velocity
-        self.fin_rw[1] = vert_vel
-
-        # Angle when approaching the ground
-        ang = np.array(st[4])
-        # It doesn't actually get limited to -pi, pi, so we must do that ourselves
-        new_ang = abs(ang) % (2 * math.pi)
-        if new_ang > math.pi:
-            new_ang = (2 * math.pi) - new_ang
-        # Want it to be as close to 0 as possible
-        ang_interp = np.interp(np.abs(new_ang), [0, self.observation_space.high[4]], [1, 0])
-
-        self.fin_rw[2] = ang_interp
-
-        # Fuel used at this time step
-        fuel = np.sum(vec_reward[3:])
-        # Both fuel should always be in [0.5, 1] so their sum should be in [1, 2]
-        # Got this from analyzing the original code below, specifically the m_power and s_power clip lines
-        if fuel == 0:
-            fuel_interp = .011
-        else:
-            fuel_interp = np.interp(fuel, [1, 2], [.01, 0.])
-        self.tot_fuel += fuel_interp
-        # self.ts += 1
-        # Average fuel used over time
-        self.fin_rw[3] = self.tot_fuel  # / self.ts
+        self.fin_rw += vec_reward[1:]
+        # # Distance to goal
+        # # Euclidean distance between x,y and [0, 0]
+        # pos = np.array(st[:2])
+        # dist = np.linalg.norm(pos - self.goal)
+        # # Interpolate to [0, 1] where 1 is reached goal
+        # new_dist = np.interp(np.abs(dist), [0, self.max_dist], [1, 0])
+        # # Save the final distance to the goal
+        # self.fin_rw[0] = new_dist
+        #
+        # # Vertical velocity when approaching the ground
+        # lin_vel = np.array(st[2])
+        # # Want it to come in slow for a soft landing - neither highly negative or positive
+        # vert_vel = np.interp(np.abs(lin_vel), [0, self.observation_space.high[2]], [1, 0])
+        #
+        # # Save the final velocity
+        # self.fin_rw[1] = vert_vel
+        #
+        # # Angle when approaching the ground
+        # ang = np.array(st[4])
+        # # It doesn't actually get limited to -pi, pi, so we must do that ourselves
+        # new_ang = abs(ang) % (2 * math.pi)
+        # if new_ang > math.pi:
+        #     new_ang = (2 * math.pi) - new_ang
+        # # Want it to be as close to 0 as possible
+        # ang_interp = np.interp(np.abs(new_ang), [0, self.observation_space.high[4]], [1, 0])
+        #
+        # self.fin_rw[2] = ang_interp
+        #
+        # # Fuel used at this time step
+        # fuel = np.sum(vec_reward[3:])
+        # # Both fuel should always be in [0.5, 1] so their sum should be in [1, 2]
+        # # Got this from analyzing the original code below, specifically the m_power and s_power clip lines
+        # if fuel == 0:
+        #     fuel_interp = .011
+        # else:
+        #     fuel_interp = np.interp(fuel, [1, 2], [.01, 0.])
+        # self.tot_fuel += fuel_interp
+        # # self.ts += 1
+        # # Average fuel used over time
+        # self.fin_rw[3] = self.tot_fuel  # / self.ts
 
         return st, vec_reward, terminated, truncated, info
 
