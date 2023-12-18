@@ -42,25 +42,33 @@ class MOLunarLander(LunarLander):  # no need for EzPickle, it's already in Lunar
         # angle at the final time step (small angle better)
         # average fuel used
         self.reward_space = spaces.Box(
-            low=np.array([0., 0., 0., 0.]),
-            high=np.array([1., 1., 1., 1.]),
+            low=np.array([-100, -np.inf, -1, -1]),
+            high=np.array([100, np.inf, 0, 0]),
             shape=(4,),
             dtype=np.float32,
         )
         self.reward_dim = 3
         self.goal = np.zeros((2,))
-        self.max_dist = self.calc_max_dist()
+        # self.max_dist = self.calc_max_dist()
         self.st_bh_size = 6
         self.st_bh_idxs = [0, 6]
 
+        self.rw_norm = 500
+        self.max_rw = [self.rw_norm] * self.reward_dim
+        self.cumulative_reward = np.zeros((self.reward_dim,))
         self.fin_rw = np.zeros((self.reward_dim,))
-        self.tot_fuel = 0
-        self.ts = 0
+
+    def calc_fin_rw(self):
+        # Calculate the percent of theoretical max reward we have achieved
+        # 200 time steps (from init file), each time step adds up to -1 reward
+        # 200 is the theoretical max, then subtract rewards from there
+        # Normalize with 200 to get all rewards in [0, 1]
+        self.fin_rw = (self.cumulative_reward + self.max_rw) / self.rw_norm
 
     def reset_custom(self):
         self.fin_rw = np.zeros((self.reward_dim,))
-        self.tot_fuel = 0
-        self.ts = 0
+        self.cumulative_reward = np.zeros((self.reward_dim,))
+        return self.reset()
 
     def calc_max_dist(self):
         highs = self.observation_space.high[0:2]
@@ -68,7 +76,10 @@ class MOLunarLander(LunarLander):  # no need for EzPickle, it's already in Lunar
 
     def step(self, action):
         st, vec_reward, terminated, truncated, info = self.original_code(action)
+        # self.cumulative_reward += vec_reward[1:]
         self.fin_rw += vec_reward[1:]
+
+        # self.calc_fin_rw()
         # # Distance to goal
         # # Euclidean distance between x,y and [0, 0]
         # pos = np.array(st[:2])
@@ -225,16 +236,18 @@ class MOLunarLander(LunarLander):  # no need for EzPickle, it's already in Lunar
         reward = 0
         vector_reward = np.zeros(4, dtype=np.float32)
         shaping = (
-            -100 * np.sqrt(state[0] * state[0] + state[1] * state[1])
-            - 100 * np.sqrt(state[2] * state[2] + state[3] * state[3])
-            - 100 * abs(state[4])
-            + 10 * state[6]
-            + 10 * state[7]
+            - 0.1 * np.sqrt(state[0] * state[0] + state[1] * state[1])
+            - 0.1 * np.sqrt(state[2] * state[2] + state[3] * state[3])
+            - 0.1 * abs(state[4])
+            + 0.01 * state[6]
+            + 0.01 * state[7]
         )  # And ten points for legs contact, the idea is if you
         # lose contact again after landing, you get negative reward
+
         if self.prev_shaping is not None:
             reward = shaping - self.prev_shaping
-            vector_reward[1] = shaping - self.prev_shaping
+            shap_diff = shaping - self.prev_shaping
+            vector_reward[1] = np.clip(shap_diff, -1, 1).astype(np.float32)
         self.prev_shaping = shaping
 
         reward -= m_power * 0.30  # less fuel spent is better, about -30 for heuristic landing

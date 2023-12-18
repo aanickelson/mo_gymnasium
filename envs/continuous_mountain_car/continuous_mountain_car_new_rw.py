@@ -29,17 +29,18 @@ class MOContinuousMountainCar(Continuous_MountainCarEnv, EzPickle):
         self.reward_dim = 2
         self.st_bh_size = 2
         self.st_bh_idxs = [0, 2]
-        self.rw_norm = 500
+        self.rw_norm = 999
         self.max_rw = [self.rw_norm] * self.reward_dim
         self.cumulative_reward = np.zeros((self.reward_dim,))
         self.fin_rw = np.zeros((self.reward_dim,))
 
     def calc_fin_rw(self):
         # Calculate the percent of theoretical max reward we have achieved
-        # 200 time steps (from init file), each time step adds up to -1 reward
-        # 200 is the theoretical max, then subtract rewards from there
-        # Normalize with 200 to get all rewards in [0, 1]
-        self.fin_rw = (self.cumulative_reward + self.max_rw) / self.rw_norm
+        # 999 time steps (from init file), each time step adds up to -1 reward
+        # 999 is the theoretical max, then subtract rewards from there
+        # Normalize with 999 to get all rewards in [0, 1]
+        # cubed so there's a biggere difference as you approach 1
+        self.fin_rw = ((self.cumulative_reward + self.max_rw) / self.rw_norm)**6
 
     def reset_custom(self):
         self.cumulative_reward = np.zeros((self.reward_dim,))
