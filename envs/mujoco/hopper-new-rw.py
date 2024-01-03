@@ -37,8 +37,11 @@ class MOHopperEnv(HopperEnv, EzPickle):
 
     def calc_fin_rw(self):
         # Highest jump and longest jump
-        self.fin_rw[0] = (self.cumulative_reward[0] / self.rw_norm) ** 4
-        self.fin_rw[1] = (self.cumulative_reward[1] / self.rw_norm) ** 4
+        self.fin_rw[0] = (self.cumulative_reward[0] / (self.rw_norm))
+        self.fin_rw[1] = (self.cumulative_reward[1] / (self.rw_norm))
+
+        if self.fin_rw[0] > 5 or self.fin_rw[1] > 5:
+            print(self.fin_rw)
         # Energy used divided by total possible (2 units per time step)
         self.fin_rw[2] = (self.cumulative_reward[2] / (2 * self.rw_norm)) ** 6
         try:
@@ -58,7 +61,7 @@ class MOHopperEnv(HopperEnv, EzPickle):
         self.do_simulation(action, self.frame_skip)
         x_position_after = self.data.qpos[0]
         x_velocity = (x_position_after - x_position_before) / self.dt
-
+        x_velocity = np.clip(x_velocity, 0, 3)
         # ctrl_cost = self.control_cost(action)
 
         # forward_reward = self._forward_reward_weight * x_velocity
@@ -74,6 +77,7 @@ class MOHopperEnv(HopperEnv, EzPickle):
         z = self.data.qpos[1]
         height = 10 * (z - self.init_qpos[1])
         energy_cost = np.sum(np.square(action))
+        height = np.clip(height, 0, 3)
 
         if self.cost_objetive:
             vec_reward = np.array([x_velocity, height, -energy_cost], dtype=np.float32)
