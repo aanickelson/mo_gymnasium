@@ -51,6 +51,7 @@ class MOHopperEnv(HopperEnv, EzPickle):
 
     def reset_custom(self):
         self.fin_rw = np.zeros((self.reward_dim,))
+        self.cumulative_reward = np.zeros((self.reward_dim,))
         self.cumulative_reward[2] = 2 * self.rw_norm
         self.curr_ts = 0
         return self.reset()
