@@ -41,12 +41,14 @@ class MOHopperEnv(HopperEnv, EzPickle):
         self.fin_rw[1] = (self.cumulative_reward[1] / (self.rw_norm))
 
         if self.fin_rw[0] > 5 or self.fin_rw[1] > 5:
+            x = 1
             print(self.fin_rw)
         # Energy used divided by total possible (2 units per time step)
-        self.fin_rw[2] = (self.cumulative_reward[2] / (2 * self.rw_norm)) ** 6
+        self.fin_rw[2] = (self.cumulative_reward[2] / (2 * self.rw_norm))
         try:
             assert 0 < self.fin_rw[2] < 5
         except AssertionError:
+            x = 1
             print(self.fin_rw[2], self.cumulative_reward[2])
 
     def reset_custom(self):
