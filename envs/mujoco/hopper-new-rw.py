@@ -25,8 +25,10 @@ class MOHopperEnv(HopperEnv, EzPickle):
         self.cost_objetive = cost_objective
         self.reward_dim = 3 if cost_objective else 2
         self.reward_space = Box(low=-np.inf, high=np.inf, shape=(self.reward_dim,))
-        self.st_bh_size = 11
-        self.st_bh_idxs = [0, 11]
+        self.st_bh_size = 4
+        # Selecting the following states from https://gymnasium.farama.org/environments/mujoco/hopper/
+        # Z-coordinate of torso, angle of torso, velocity of x-coordinate of torso, velocity of z-coordinate of torso
+        self.st_bh_idxs = [0, 1, 5, 6]
 
         self.rw_norm = 1000
         self.max_rw = [self.rw_norm] * self.reward_dim

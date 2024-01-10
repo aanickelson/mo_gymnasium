@@ -28,8 +28,8 @@ class MOContinuousMountainCar(Continuous_MountainCarEnv, EzPickle):
         self.reward_space = spaces.Box(low=np.array([-1.0, -1.0]), high=np.array([0.0, 0.0]), dtype=np.float32)
         self.reward_dim = 2
         self.st_bh_size = 2
-        self.st_bh_idxs = [0, 2]
-        self.rw_norm = 999
+        self.st_bh_idxs = [0, 1]
+        self.rw_norm = 499
         self.max_rw = [self.rw_norm] * self.reward_dim
         self.cumulative_reward = np.zeros((self.reward_dim,))
         self.fin_rw = np.zeros((self.reward_dim,))
