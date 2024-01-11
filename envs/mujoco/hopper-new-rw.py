@@ -30,7 +30,7 @@ class MOHopperEnv(HopperEnv, EzPickle):
         # Z-coordinate of torso, angle of torso, velocity of x-coordinate of torso, velocity of z-coordinate of torso
         self.st_bh_idxs = [0, 1, 5, 6]
 
-        self.rw_norm = 1000
+        self.rw_norm = 200
         self.max_rw = [self.rw_norm] * self.reward_dim
         self.cumulative_reward = np.zeros((self.reward_dim,))
         self.cumulative_reward[2] = 2 * self.rw_norm

@@ -16,7 +16,7 @@ register(
 register(
     id="mo-hopper-new-rw-v4",
     entry_point="mo_gymnasium.envs.mujoco.hopper-new-rw:MOHopperEnv",
-    max_episode_steps=1000,
+    max_episode_steps=200,
 )
 
 register(
