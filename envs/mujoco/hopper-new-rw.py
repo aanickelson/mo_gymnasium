@@ -23,7 +23,8 @@ class MOHopperEnv(HopperEnv, EzPickle):
         super().__init__(**kwargs)
         EzPickle.__init__(self, cost_objective, **kwargs)
         self.cost_objetive = cost_objective
-        self.reward_dim = 3 if cost_objective else 2
+        # self.reward_dim = 3 if cost_objective else 2
+        self.reward_dim = 2
         self.reward_space = Box(low=-np.inf, high=np.inf, shape=(self.reward_dim,))
         self.st_bh_size = 4
         # Selecting the following states from https://gymnasium.farama.org/environments/mujoco/hopper/
@@ -38,25 +39,20 @@ class MOHopperEnv(HopperEnv, EzPickle):
         self.curr_ts = 0
 
     def calc_fin_rw(self):
-        # Highest jump and longest jump
+        # X and Z dimension rewards
         self.fin_rw[0] = (self.cumulative_reward[0] / (self.rw_norm))
-        self.fin_rw[1] = (self.cumulative_reward[1] / (self.rw_norm))
-
-        if self.fin_rw[0] > 5 or self.fin_rw[1] > 5:
-            x = 1
-            print(self.fin_rw)
         # Energy used divided by total possible (2 units per time step)
-        self.fin_rw[2] = (self.cumulative_reward[2] / (2 * self.rw_norm))
+        self.fin_rw[1] = (self.cumulative_reward[2] / (2 * self.rw_norm))
         try:
-            assert 0 < self.fin_rw[2] < 5
+            assert 0 < self.fin_rw[1] < 5
         except AssertionError:
             x = 1
-            print(self.fin_rw[2], self.cumulative_reward[2])
+            print(self.fin_rw[1], self.cumulative_reward[1])
 
     def reset_custom(self):
         self.fin_rw = np.zeros((self.reward_dim,))
         self.cumulative_reward = np.zeros((self.reward_dim,))
-        self.cumulative_reward[2] = 2 * self.rw_norm
+        self.cumulative_reward[1] = 2 * self.rw_norm
         self.curr_ts = 0
         return self.reset()
 
@@ -85,14 +81,13 @@ class MOHopperEnv(HopperEnv, EzPickle):
         height = np.clip(height, 0, 3)
 
         if self.cost_objetive:
-            vec_reward = np.array([x_velocity, height, -energy_cost], dtype=np.float32)
+            vec_reward = np.array([(x_velocity + height)/2, -energy_cost], dtype=np.float32)
         else:
             vec_reward = np.array([x_velocity, height], dtype=np.float32)
             vec_reward -= self._ctrl_cost_weight * energy_cost
 
         vec_reward += healthy_reward
 
-        # Save the furthest and highest jumps
         self.cumulative_reward += vec_reward
         self.calc_fin_rw()
 
