@@ -34,7 +34,7 @@ class MOHopperEnv(HopperEnv, EzPickle):
         self.rw_norm = 200
         self.max_rw = [self.rw_norm] * self.reward_dim
         self.cumulative_reward = np.zeros((self.reward_dim,))
-        self.cumulative_reward[2] = 2 * self.rw_norm
+        self.cumulative_reward[1] = 2 * self.rw_norm
         self.fin_rw = np.zeros((self.reward_dim,))
         self.curr_ts = 0
 
@@ -42,7 +42,7 @@ class MOHopperEnv(HopperEnv, EzPickle):
         # X and Z dimension rewards
         self.fin_rw[0] = (self.cumulative_reward[0] / (self.rw_norm))
         # Energy used divided by total possible (2 units per time step)
-        self.fin_rw[1] = (self.cumulative_reward[2] / (2 * self.rw_norm))
+        self.fin_rw[1] = (self.cumulative_reward[1] / (2 * self.rw_norm))
         try:
             assert 0 < self.fin_rw[1] < 5
         except AssertionError:
