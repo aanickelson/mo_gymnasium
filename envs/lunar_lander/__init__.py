@@ -17,6 +17,6 @@ register(
 register(
     id="mo-lunar-lander-continuous-new-rw-v2",
     entry_point="mo_gymnasium.envs.lunar_lander.lunar_lander_new_rw:MOLunarLander",
-    max_episode_steps=500,
+    max_episode_steps=100,
     kwargs={"continuous": True},
 )
